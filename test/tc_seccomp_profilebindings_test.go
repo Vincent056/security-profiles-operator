@@ -35,7 +35,7 @@ spec:
   profileRef:
     kind: SeccompProfile
     name: profile-allow-unsafe
-  image: %s
+  image: '%s'
 `, image)
 	const testPod = `
 apiVersion: v1
