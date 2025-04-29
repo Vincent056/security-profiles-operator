@@ -1,4 +1,4 @@
-FROM brew.registry.redhat.io/rh-osbs/openshift-golang-builder:v1.22 as builder
+FROM brew.registry.redhat.io/rh-osbs/openshift-golang-builder:v1.24 as builder
 
 RUN export SMDEV_CONTAINER_OFF=1 && \
     subscription-manager register --org $(cat "/activation-key/org") --activationkey $(cat "/activation-key/activationkey") && \
