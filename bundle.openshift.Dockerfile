@@ -11,7 +11,7 @@ RUN ./update_bundle_namespace.sh
 RUN ./update_bundle_rbac.sh
 
 FROM scratch
-LABEL name=openshift-compliance-operator-bundle
+LABEL name=security-profiles-operator-bundle
 LABEL version=${SPO_VERSION}
 LABEL summary='OpenShift Security Profiles Operator'
 LABEL maintainer='Infrastructure Security and Compliance Team <isc-team@redhat.com>'
