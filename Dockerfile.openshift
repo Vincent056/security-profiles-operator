@@ -35,7 +35,9 @@ LABEL \
         com.redhat.component="openshift-security-profiles-operator-container" \
         io.openshift.maintainer.product="OpenShift Container Platform" \
         io.openshift.maintainer.component="Security Profiles Operator" \
-        version=0.8.4
+        description="The Security Profiles Operator makes it easier for cluster admins to manage their seccomp, or SELinux profiles and apply them to Kubernetes workloads." \
+        summary="Security Profiles Operator" \
+        version=0.9.0
 #        io.openshift.build.commit.id=98271bc2812881010146f47e4587dcd449b846bd \
 #        io.openshift.build.source-location=https://github.com/openshift/file-integrity-operator.git \
 #        io.openshift.build.commit.url=https://github.com/openshift/file-integrity-operator.git/commit/98271bc2812881010146f47e4587dcd449b846bd \
