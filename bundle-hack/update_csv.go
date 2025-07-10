@@ -65,10 +65,7 @@ func main() {
 		fmt.Println(err)
 		os.Exit(1)
 	}
-	if err := removeRelatedImages(manifest); err != nil {
-		fmt.Println(err)
-		os.Exit(1)
-	}
+
 	if err := removeContainerImageAnnotations(manifest); err != nil {
 		fmt.Println(err)
 		os.Exit(1)
@@ -177,6 +174,14 @@ func splitPullSpec(konfluxPullSpec string) (string, error) {
 	return delimiter + parts[1], nil
 }
 
+// imgDef defines an image definition with environment name, source and target
+type imgDef struct {
+	EnvName    string
+	KonfluxPS  string
+	RedHatBase string
+	FinalPS    string
+}
+
 // replaceImages updates the main container image and all RELATED_IMAGE_*
 // env-vars by peeling off the SHA from each Konflux pull spec and
 // re-anchoring it to the Red Hat registry.
@@ -187,12 +192,6 @@ func replaceImages(m map[string]interface{}) error {
 
 	// 1) Define your raw Konflux pull specs (with sha) and the
 	//    corresponding Red Hat registry base names.
-	type imgDef struct {
-		EnvName    string
-		KonfluxPS  string // quay.io/...@sha256:...
-		RedHatBase string // registry.redhat.io/...
-		FinalPS    string // will be set after extracting sha
-	}
 	defs := []imgDef{
 		{
 			EnvName:    "RELATED_IMAGE_OPERATOR",
@@ -218,10 +217,6 @@ func replaceImages(m map[string]interface{}) error {
 			EnvName:    "RELATED_IMAGE_SELINUXD_EL8",
 			KonfluxPS:  "quay.io/redhat-user-workloads/ocp-isc-tenant/openshift-selinuxd-rhel8-container-release@sha256:4e068407c2da64f026715a13c8e5c468999f3c75abf9871ce3ff9082cdac0b37",
 			RedHatBase: "registry.redhat.io/compliance/openshift-selinuxd-rhel8",
-		},
-		{
-			EnvName: "RELATED_IMAGE_RBAC_PROXY",
-			FinalPS: "registry.redhat.io/openshift4/ose-kube-rbac-proxy:latest",
 		},
 	}
 
@@ -292,7 +287,74 @@ func replaceImages(m map[string]interface{}) error {
 		}
 	}
 
+	// 6) Update relatedImages section if it exists
+	if err := updateRelatedImages(m, defs); err != nil {
+		return err
+	}
+
 	fmt.Println("Successfully replaced all images and env vars.")
+	return nil
+}
+
+// updateRelatedImages updates the relatedImages section with the new image references
+func updateRelatedImages(m map[string]interface{}, defs []imgDef) error {
+	spec, ok := m["spec"].(map[string]interface{})
+	if !ok {
+		return errors.New("manifest missing 'spec'")
+	}
+
+	// Check if relatedImages exists
+	relatedImagesRaw, exists := spec["relatedImages"]
+	if !exists {
+		fmt.Println("No relatedImages section found, skipping update.")
+		return nil
+	}
+
+	relatedImages, ok := relatedImagesRaw.([]interface{})
+	if !ok {
+		return errors.New("relatedImages is not an array")
+	}
+
+	// Create a mapping from image names to final images for quick lookup
+	imageMap := make(map[string]string)
+
+	// Map environment variable names to relatedImages names
+	envToRelatedName := map[string]string{
+		"RELATED_IMAGE_OPERATOR":        "security-profiles-operator",
+		"RELATED_IMAGE_SELINUXD":        "selinuxd",
+		"RELATED_IMAGE_SELINUXD_EL8":    "selinuxd_el8",
+		"RELATED_IMAGE_SELINUXD_EL9":    "selinuxd_el9",
+		"RELATED_IMAGE_SELINUXD_FEDORA": "selinuxd_fedora",
+	}
+
+	// Build the image map
+	for _, def := range defs {
+		if relatedName, exists := envToRelatedName[def.EnvName]; exists {
+			imageMap[relatedName] = def.FinalPS
+		}
+	}
+
+	// Update the relatedImages entries
+	updated := 0
+	for _, relatedImageRaw := range relatedImages {
+		relatedImage, ok := relatedImageRaw.(map[string]interface{})
+		if !ok {
+			continue
+		}
+
+		name, ok := relatedImage["name"].(string)
+		if !ok {
+			continue
+		}
+
+		if newImage, exists := imageMap[name]; exists {
+			relatedImage["image"] = newImage
+			updated++
+			fmt.Printf("Updated relatedImage '%s' to '%s'\n", name, newImage)
+		}
+	}
+
+	fmt.Printf("Successfully updated %d relatedImages entries.\n", updated)
 	return nil
 }
 
@@ -399,18 +461,6 @@ func replaceIcon(m map[string]interface{}) error {
 		},
 	}
 	fmt.Printf("Successfully updated the operator image to use icon in %s.\n", iconPath)
-	return nil
-}
-
-// removeRelatedImages removes the entire 'relatedImages' key from spec.
-func removeRelatedImages(m map[string]interface{}) error {
-	spec, ok := m["spec"].(map[string]interface{})
-	if !ok {
-		return fmt.Errorf("manifest has no 'spec' field")
-	}
-
-	delete(spec, "relatedImages")
-	fmt.Println("Removed the operator from operator manifest")
 	return nil
 }
 
