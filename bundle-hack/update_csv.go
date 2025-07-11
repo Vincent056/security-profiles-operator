@@ -134,7 +134,8 @@ func addRequiredAnnotations(m map[string]interface{}) error {
 // addRequiredLabels adds required labels under metadata.labels
 func addRequiredLabels(m map[string]interface{}) error {
 	requiredLabels := map[string]string{
-		"operatorframework.io/arch.amd64": "supported",
+		"operatorframework.io/arch.amd64":   "supported",
+		"operatorframework.io/arch.ppc64le": "supported",
 	}
 
 	metadata, ok := m["metadata"].(map[string]interface{})
@@ -322,9 +323,9 @@ func updateRelatedImages(m map[string]interface{}, defs []imgDef) error {
 	envToRelatedName := map[string]string{
 		"RELATED_IMAGE_OPERATOR":        "security-profiles-operator",
 		"RELATED_IMAGE_SELINUXD":        "selinuxd",
-		"RELATED_IMAGE_SELINUXD_EL8":    "selinuxd_el8",
-		"RELATED_IMAGE_SELINUXD_EL9":    "selinuxd_el9",
-		"RELATED_IMAGE_SELINUXD_FEDORA": "selinuxd_fedora",
+		"RELATED_IMAGE_SELINUXD_EL8":    "selinuxd-el8",
+		"RELATED_IMAGE_SELINUXD_EL9":    "selinuxd-el9",
+		"RELATED_IMAGE_SELINUXD_FEDORA": "selinuxd-fedora",
 	}
 
 	// Build the image map
