@@ -36,6 +36,7 @@ spec:
   defaultAction: SCMP_ACT_LOG
   architectures:
   - SCMP_ARCH_X86_64
+  - SCMP_ARCH_PPC64LE
   syscalls:
   - action: SCMP_ACT_ALLOW
     names:
