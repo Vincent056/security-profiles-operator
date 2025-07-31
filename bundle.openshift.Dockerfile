@@ -1,8 +1,9 @@
+ARG SPO_VERSION="0.9.0"
 
 FROM brew.registry.redhat.io/rh-osbs/openshift-golang-builder:v1.23 as builder-runner
 # Use a new stage to enable caching of the package installations for local development
 FROM builder-runner as builder
-ARG SPO_VERSION="0.9.0"
+ARG SPO_VERSION
 COPY . .
 WORKDIR bundle-hack
 RUN go run ./update_csv.go ../bundle/manifests ${SPO_VERSION}
@@ -11,6 +12,8 @@ RUN ./update_bundle_namespace.sh
 RUN ./update_bundle_rbac.sh
 
 FROM scratch
+ARG SPO_VERSION
+
 LABEL name=security-profiles-operator-bundle
 LABEL version=${SPO_VERSION}
 LABEL summary='OpenShift Security Profiles Operator'
