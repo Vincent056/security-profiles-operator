@@ -256,6 +256,8 @@ func (p *podSeccompRecorder) updateSecurityContext(
 		p.updateSeccompSecurityContext(ctr, pr)
 	case profilerecordingv1alpha1.ProfileRecordingKindSelinuxProfile:
 		p.updateSelinuxSecurityContext(ctr, pr)
+	case profilerecordingv1alpha1.ProfileRecordingKindAppArmorProfile:
+		p.updateApparmorSecurityContext(ctr, pr)
 	}
 
 	p.log.Info(fmt.Sprintf(
@@ -307,6 +309,20 @@ func (p *podSeccompRecorder) updateSelinuxSecurityContext(
 	}
 
 	ctr.SecurityContext.SELinuxOptions.Type = config.SelinuxPermissiveProfile
+}
+
+func (p *podSeccompRecorder) updateApparmorSecurityContext(
+	ctr *corev1.Container,
+	pr *profilerecordingv1alpha1.ProfileRecording,
+) {
+	if pr.Spec.Recorder != profilerecordingv1alpha1.ProfileRecorderLogs {
+		return
+	}
+
+	p.record.Eventf(pr,
+		corev1.EventTypeWarning,
+		"AppArmorNotSupported",
+		"AppArmor log-based recording is not supported, container: %s", ctr.Name)
 }
 
 func (p *podSeccompRecorder) setRecordingReferences(
