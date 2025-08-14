@@ -196,27 +196,27 @@ func replaceImages(m map[string]interface{}) error {
 	defs := []imgDef{
 		{
 			EnvName:    "RELATED_IMAGE_OPERATOR",
-			KonfluxPS:  "quay.io/redhat-user-workloads/ocp-isc-tenant/security-profiles-operator-release@sha256:d05c909fd8b4e5eb1b63aa046c04cdfb0e7875671e027509c727ce0d9b5f4fd0",
+			KonfluxPS:  "quay.io/redhat-user-workloads/ocp-isc-tenant/security-profiles-operator-release@sha256:a3e3e87c4ffe86499b3165ba2cc20eccdc56624398d3a18c7ada8ae18357bfbc",
 			RedHatBase: "registry.redhat.io/compliance/openshift-security-profiles-rhel8-operator",
 		},
 		{
 			EnvName:    "RELATED_IMAGE_SELINUXD",
-			KonfluxPS:  "quay.io/redhat-user-workloads/ocp-isc-tenant/openshift-selinuxd-rhel8-container-release@sha256:baf9cd4e2c39aa6d280d7458f7698a0b3db9c2f889c1e6f0832b21a68f6e4338",
+			KonfluxPS:  "quay.io/redhat-user-workloads/ocp-isc-tenant/openshift-selinuxd-rhel8-container-release@sha256:9556b7d523895b1f351f6745a5a62826a9b1f0d0935c46d34f6cc1ddeeb8b252",
 			RedHatBase: "registry.redhat.io/compliance/openshift-selinuxd-rhel8",
 		},
 		{
 			EnvName:    "RELATED_IMAGE_SELINUXD_EL9",
-			KonfluxPS:  "quay.io/redhat-user-workloads/ocp-isc-tenant/openshift-selinuxd-rhel9-container-release@sha256:7d87cad15418e93b3ef2b119c60deffd1da84a770422eabf6e500d3c6cdd4c84",
+			KonfluxPS:  "quay.io/redhat-user-workloads/ocp-isc-tenant/openshift-selinuxd-rhel9-container-release@sha256:48f1e21bab08dab1f1f7b9ad15dd5faba8f2468d45f7df1b61e7338041ad8385",
 			RedHatBase: "registry.redhat.io/compliance/openshift-selinuxd-rhel9",
 		},
 		{
 			EnvName:    "RELATED_IMAGE_SELINUXD_FEDORA",
-			KonfluxPS:  "quay.io/redhat-user-workloads/ocp-isc-tenant/openshift-selinuxd-rhel9-container-release@sha256:7d87cad15418e93b3ef2b119c60deffd1da84a770422eabf6e500d3c6cdd4c84",
+			KonfluxPS:  "quay.io/redhat-user-workloads/ocp-isc-tenant/openshift-selinuxd-rhel9-container-release@sha256:48f1e21bab08dab1f1f7b9ad15dd5faba8f2468d45f7df1b61e7338041ad8385",
 			RedHatBase: "registry.redhat.io/compliance/openshift-selinuxd-rhel9",
 		},
 		{
 			EnvName:    "RELATED_IMAGE_SELINUXD_EL8",
-			KonfluxPS:  "quay.io/redhat-user-workloads/ocp-isc-tenant/openshift-selinuxd-rhel8-container-release@sha256:baf9cd4e2c39aa6d280d7458f7698a0b3db9c2f889c1e6f0832b21a68f6e4338",
+			KonfluxPS:  "quay.io/redhat-user-workloads/ocp-isc-tenant/openshift-selinuxd-rhel8-container-release@sha256:9556b7d523895b1f351f6745a5a62826a9b1f0d0935c46d34f6cc1ddeeb8b252",
 			RedHatBase: "registry.redhat.io/compliance/openshift-selinuxd-rhel8",
 		},
 	}
