@@ -96,7 +96,6 @@ Then find pods using these SELinux profiles:
 SELINUX_TYPES=$(oc get selinuxprofiles,rawselinuxprofiles -A -o json | jq -r '.items[].status.usage' | sort -u)
 
 # Find pods using any of these SELinux types
-> $BACKUP_DIR/workload-analysis/selinux-usage.txt
 for selinux_type in $SELINUX_TYPES; do
   echo "Checking for pods using: $selinux_type" >> $BACKUP_DIR/workload-analysis/selinux-usage.txt
   oc get pods -A -o json | jq -r --arg type "$selinux_type" '
@@ -166,53 +165,69 @@ oc get spod spod -n openshift-security-profiles -o json | jq '.spec'
 
 ### Backup Profile Bindings
 ```bash
-# Backup all profile bindings
-for binding in $(oc get profilebindings -n openshift-security-profiles -o name); do
-  name=$(echo $binding | cut -d'/' -f2)
-  oc get profilebinding $name -n openshift-security-profiles -o json | jq '.' > \
-    "$BACKUP_DIR/bindings-recordings/profilebindings-openshift-security-profiles-${name}.json"
-  echo "Backed up profilebinding: $name"
+# Backup all profile bindings from all namespaces
+for ns in $(oc get profilebindings -A -o jsonpath='{range .items[*]}{.metadata.namespace}{"\n"}{end}' | sort -u); do
+  echo "Checking namespace: $ns for profile bindings"
+  for binding in $(oc get profilebindings -n $ns -o name); do
+    name=$(echo $binding | cut -d'/' -f2)
+    oc get profilebinding $name -n $ns -o json | jq '.' > \
+      "$BACKUP_DIR/bindings-recordings/profilebindings-${ns}-${name}.json"
+    echo "Backed up profilebinding: $name from namespace: $ns"
+  done
 done
 ```
 
 **Actual output:**
 ```
-Backed up profilebinding: profile-binding-seccomp
-Backed up profilebinding: profile-binding-selinuxd
+Checking namespace: openshift-security-profiles for profile bindings
+Backed up profilebinding: profile-binding-seccomp from namespace: openshift-security-profiles
+Backed up profilebinding: profile-binding-selinuxd from namespace: openshift-security-profiles
 ```
 
 ### Backup Security Profiles
 ```bash
-# Backup seccomp profiles
-for profile in $(oc get seccompprofiles -n openshift-security-profiles -o name); do
-  name=$(echo $profile | cut -d'/' -f2)
-  oc get seccompprofile $name -n openshift-security-profiles -o json | jq '.' > \
-    "$BACKUP_DIR/profiles/seccompprofiles-openshift-security-profiles-${name}.json"
-  echo "Backed up seccompprofile: $name"
+# Backup seccomp profiles from all namespaces
+for ns in $(oc get seccompprofiles -A -o jsonpath='{range .items[*]}{.metadata.namespace}{"\n"}{end}' | sort -u); do
+  echo "Checking namespace: $ns for seccomp profiles"
+  for profile in $(oc get seccompprofiles -n $ns -o name); do
+    name=$(echo $profile | cut -d'/' -f2)
+    oc get seccompprofile $name -n $ns -o json | jq '.' > \
+      "$BACKUP_DIR/profiles/seccompprofiles-${ns}-${name}.json"
+    echo "Backed up seccompprofile: $name from namespace: $ns"
+  done
 done
 
-# Backup SELinux profiles
-for profile in $(oc get selinuxprofiles -n openshift-security-profiles -o name); do
-  name=$(echo $profile | cut -d'/' -f2)
-  oc get selinuxprofile $name -n openshift-security-profiles -o json | jq '.' > \
-    "$BACKUP_DIR/profiles/selinuxprofiles-openshift-security-profiles-${name}.json"
-  echo "Backed up selinuxprofile: $name"
+# Backup SELinux profiles from all namespaces
+for ns in $(oc get selinuxprofiles -A -o jsonpath='{range .items[*]}{.metadata.namespace}{"\n"}{end}' | sort -u); do
+  echo "Checking namespace: $ns for SELinux profiles"
+  for profile in $(oc get selinuxprofiles -n $ns -o name); do
+    name=$(echo $profile | cut -d'/' -f2)
+    oc get selinuxprofile $name -n $ns -o json | jq '.' > \
+      "$BACKUP_DIR/profiles/selinuxprofiles-${ns}-${name}.json"
+    echo "Backed up selinuxprofile: $name from namespace: $ns"
+  done
 done
 
-# Backup raw SELinux profiles
-for profile in $(oc get rawselinuxprofiles -n openshift-security-profiles -o name); do
-  name=$(echo $profile | cut -d'/' -f2)
-  oc get rawselinuxprofile $name -n openshift-security-profiles -o json | jq '.' > \
-    "$BACKUP_DIR/profiles/rawselinuxprofiles-openshift-security-profiles-${name}.json"
-  echo "Backed up rawselinuxprofile: $name"
+# Backup raw SELinux profiles from all namespaces
+for ns in $(oc get rawselinuxprofiles -A -o jsonpath='{range .items[*]}{.metadata.namespace}{"\n"}{end}' | sort -u); do
+  echo "Checking namespace: $ns for raw SELinux profiles"
+  for profile in $(oc get rawselinuxprofiles -n $ns -o name); do
+    name=$(echo $profile | cut -d'/' -f2)
+    oc get rawselinuxprofile $name -n $ns -o json | jq '.' > \
+      "$BACKUP_DIR/profiles/rawselinuxprofiles-${ns}-${name}.json"
+    echo "Backed up rawselinuxprofile: $name from namespace: $ns"
+  done
 done
 ```
 
 **Actual output:**
 ```
-Backed up seccompprofile: profile-block-all
-Backed up selinuxprofile: errorlogger-selinuxd-test
-Backed up rawselinuxprofile: errorlogger
+Checking namespace: openshift-security-profiles for seccomp profiles
+Backed up seccompprofile: profile-block-all from namespace: openshift-security-profiles
+Checking namespace: openshift-security-profiles for SELinux profiles
+Backed up selinuxprofile: errorlogger-selinuxd-test from namespace: openshift-security-profiles
+Checking namespace: openshift-security-profiles for raw SELinux profiles
+Backed up rawselinuxprofile: errorlogger from namespace: openshift-security-profiles
 ```
 
 ### Create Backup Summary
@@ -222,8 +237,20 @@ echo "Total files backed up: $(find $BACKUP_DIR -name "*.json" | wc -l)" >> $BAC
 echo "" >> $BACKUP_DIR/backup-summary.txt
 echo "SPOD configuration: $([ -f $BACKUP_DIR/spod-configuration.json ] && echo "Yes" || echo "No")" >> $BACKUP_DIR/backup-summary.txt
 echo "" >> $BACKUP_DIR/backup-summary.txt
-echo "Profiles backed up:" >> $BACKUP_DIR/backup-summary.txt
-find $BACKUP_DIR/profiles -name "*.json" -exec basename {} \; | sort >> $BACKUP_DIR/backup-summary.txt
+
+# List namespaces that have been backed up
+echo "Namespaces with backed up resources:" >> $BACKUP_DIR/backup-summary.txt
+find $BACKUP_DIR -name "*.json" | grep -E "(profiles|bindings)" | \
+  sed -E 's/.*-(openshift-[^-]+|[^-]+)-[^-]+\.json$/\1/' | sort -u >> $BACKUP_DIR/backup-summary.txt
+echo "" >> $BACKUP_DIR/backup-summary.txt
+
+echo "Profiles backed up by type:" >> $BACKUP_DIR/backup-summary.txt
+echo "  SeccompProfiles:" >> $BACKUP_DIR/backup-summary.txt
+find $BACKUP_DIR/profiles -name "seccompprofiles-*.json" -exec basename {} \; | sort >> $BACKUP_DIR/backup-summary.txt
+echo "  SELinuxProfiles:" >> $BACKUP_DIR/backup-summary.txt
+find $BACKUP_DIR/profiles -name "selinuxprofiles-*.json" -exec basename {} \; | sort >> $BACKUP_DIR/backup-summary.txt
+echo "  RawSELinuxProfiles:" >> $BACKUP_DIR/backup-summary.txt
+find $BACKUP_DIR/profiles -name "rawselinuxprofiles-*.json" -exec basename {} \; | sort >> $BACKUP_DIR/backup-summary.txt
 echo "" >> $BACKUP_DIR/backup-summary.txt
 echo "Profile bindings backed up:" >> $BACKUP_DIR/backup-summary.txt
 find $BACKUP_DIR/bindings-recordings -name "*.json" -exec basename {} \; | sort >> $BACKUP_DIR/backup-summary.txt
@@ -250,20 +277,30 @@ profilebindings-openshift-security-profiles-profile-binding-selinuxd.json
 
 ## Step 4: Delete SPO Objects in Order
 
-**IMPORTANT**: Delete profile bindings first to prevent the operator from automatically reapplying profiles to workloads.
+**IMPORTANT**: Delete profile bindings first to prevent the operator from automatically reapplying profiles to workloads. You also need to make sure there is no activeWorkload in the
+profileBinding objects before deleting it.
 
-### Delete Profile Bindings First
+### Delete Profile Bindings and activeworkloads
 ```bash
-# List and delete all profile bindings
-oc get profilebindings -n openshift-security-profiles
-oc delete profilebindings --all -n openshift-security-profiles
+# List all profile bindings across all namespaces
+oc get profilebindings -A
+
+# Check all profilebinding activeworkload field
+oc get profilebindings -A -o json | jq -r '.items[] | "\(.metadata.namespace)/\(.metadata.name): \(.status.activeWorkloads)"'
+
+# Check and Delete all workload listed there above
+
+
+# Delete all profile bindings from all namespaces
+for ns in $(oc get profilebindings -A -o jsonpath='{range .items[*]}{.metadata.namespace}{"\n"}{end}' | sort -u); do
+  echo "Deleting profile bindings in namespace: $ns"
+  oc delete profilebindings --all -n $ns
+done
 ```
 
 **Actual command and output:**
 ```bash
-oc delete profilebinding profile-binding-seccomp profile-binding-selinuxd -n openshift-security-profiles
-```
-```
+Deleting profile bindings in namespace: openshift-security-profiles
 profilebinding.security-profiles-operator.x-k8s.io "profile-binding-seccomp" deleted
 profilebinding.security-profiles-operator.x-k8s.io "profile-binding-selinuxd" deleted
 ```
@@ -275,14 +312,26 @@ Next, update all workloads to remove references to SPO profiles. You must either
 
 ### Delete Security Profiles
 ```bash
-# Delete all security profiles
-oc delete seccompprofiles,selinuxprofiles,rawselinuxprofiles --all -n openshift-security-profiles
+# Delete all security profiles from all namespaces
+for resource in seccompprofiles selinuxprofiles rawselinuxprofiles; do
+  echo "Checking for $resource in all namespaces..."
+  for ns in $(oc get $resource -A -o jsonpath='{range .items[*]}{.metadata.namespace}{"\n"}{end}' | sort -u); do
+    echo "Deleting $resource in namespace: $ns"
+    oc delete $resource --all -n $ns
+  done
+done
 ```
 
 **Example output:**
 ```
+Checking for seccompprofiles in all namespaces...
+Deleting seccompprofiles in namespace: openshift-security-profiles
 seccompprofile.security-profiles-operator.x-k8s.io "profile-block-all" deleted
+Checking for selinuxprofiles in all namespaces...
+Deleting selinuxprofiles in namespace: openshift-security-profiles
 selinuxprofile.security-profiles-operator.x-k8s.io "errorlogger-selinuxd-test" deleted
+Checking for rawselinuxprofiles in all namespaces...
+Deleting rawselinuxprofiles in namespace: openshift-security-profiles
 rawselinuxprofile.security-profiles-operator.x-k8s.io "errorlogger" deleted
 ```
 
@@ -304,13 +353,17 @@ oc delete spod spod -n openshift-security-profiles
 
 To uninstall the Security Profiles Operator (SPO) Operator, follow these steps:
 
-### Uninstall via OperatorHub (Recommended)
+### Uninstall via OperatorHub (You can also do that in the CLI)
 1. Open the OpenShift Console.
 2. Go to **Operators** → **Installed Operators**.
 3. Select **Security Profiles Operator** in the `openshift-security-profiles` namespace.
 4. Click **Uninstall**.
 5. Confirm the uninstallation.
 
+### Run below command to remove the MutatingWebhookConfigurations
+```bash
+oc delete mutatingwebhookconfigurations spo-mutating-webhook-configuration
+```
 
 ### Delete Namespace
 ```bash
