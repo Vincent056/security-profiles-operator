@@ -341,6 +341,10 @@ rawselinuxprofile.security-profiles-operator.x-k8s.io "errorlogger" deleted
 oc get seccompprofiles,selinuxprofiles,rawselinuxprofiles -A
 ```
 
+**IMPORTANT**: If you have any profile recording in progress, you should also remove them, as well as associated active workloads with the profile recordings.
+[Manage Profile Recording](https://docs.redhat.com/en/documentation/openshift_container_platform/4.12/html/security_and_compliance/security-profiles-operator#spo-recording-profiles_spo-seccomp)
+
+
 ## Step 5: Uninstall SPO Operator
 
 ### Delete SPO Daemon
@@ -374,7 +378,7 @@ oc delete namespace openshift-security-profiles
 
 ```bash
 # Delete all SPO CRDs
-for crd in seccompprofiles selinuxprofiles rawselinuxprofiles profilebindings profilerecordings securityprofilenodestatuses securityprofilesoperatordaemons apparmorprofiles
+for crd in seccompprofiles selinuxprofiles rawselinuxprofiles profilebindings profilerecordings securityprofilenodestatuses securityprofilesoperatordaemons apparmorprofiles; do
   if oc get crd ${crd}.security-profiles-operator.x-k8s.io &>/dev/null; then
     echo "Deleting CRD: ${crd}.security-profiles-operator.x-k8s.io"
     oc delete crd ${crd}.security-profiles-operator.x-k8s.io
@@ -450,6 +454,10 @@ for file in $BACKUP_DIR/profiles/*.json; do
         del(.metadata.uid) | 
         del(.metadata.creationTimestamp) | 
         del(.metadata.generation) | 
+        del(.metadata.annotations)
+        del(.metadata.labels)
+        del(.metadata.managedFields)
+        del(.metadata.ownerReferences)
         del(.status) | 
         del(.metadata.finalizers)' "$file" > "$BACKUP_DIR/profiles-to-restore/${profile_type}-${name}.json"
     
