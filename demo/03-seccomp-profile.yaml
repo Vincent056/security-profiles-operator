@@ -1,0 +1,25 @@
+# Step 3: Create a SeccompProfile
+#
+# This profile logs all syscalls (SCMP_ACT_LOG) — useful for auditing what
+# syscalls a workload actually uses before building a restrictive profile.
+#
+# Usage:
+#   oc apply -f 03-seccomp-profile.yaml
+#
+# Verify it is installed on all nodes:
+#   oc get seccompprofile -n spo-demo
+#   (wait for STATUS=Installed)
+#
+# Check the localhostProfile path (used in pod spec):
+#   oc get seccompprofile demo-log-all -n spo-demo -o jsonpath='{.status.localhostProfile}'
+#   # Output: operator/demo-log-all.json
+---
+apiVersion: security-profiles-operator.x-k8s.io/v1beta1
+kind: SeccompProfile
+metadata:
+  name: demo-log-all
+  namespace: spo-demo
+  annotations:
+    description: "Logs all syscalls — useful for auditing workload behavior"
+spec:
+  defaultAction: "SCMP_ACT_LOG"

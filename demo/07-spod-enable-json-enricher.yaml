@@ -1,0 +1,49 @@
+# Step 7: Enable the JSON Log Enricher (new in 0.10.0)
+#
+# The JSON Log Enricher is an entirely new subsystem that uses eBPF to capture
+# syscall events and outputs them as structured JSON lines. Key features:
+#
+#   - Per-process syscall grouping at configurable intervals
+#   - auditID field for correlating with K8s API server audit logs (Request UID)
+#   - Container/pod/namespace metadata correlation
+#   - File system audit logging with configurable log rotation
+#
+# auditLogPath MUST be under the volume mount defined in the ConfigMap
+# "security-profiles-operator-profile" (key: json-enricher-log-volume-mount-path).
+# Default mount path: /data/logs/jsonenricher
+# Default volume source: emptyDir with 500Mi sizeLimit
+#
+# If auditLogPath is omitted, output goes to stdout (json-enricher container logs).
+#
+# Usage:
+#   oc patch spod spod -n openshift-security-profiles \
+#     --type=merge --patch-file=07-spod-enable-json-enricher.yaml
+#
+# Wait for SPOD to become RUNNING with 3/3 containers per pod (~90 seconds):
+#   watch "oc get spod spod -n openshift-security-profiles && echo '---' && \
+#     oc get pods -n openshift-security-profiles -l name=spod"
+---
+apiVersion: security-profiles-operator.x-k8s.io/v1alpha1
+kind: SecurityProfilesOperatorDaemon
+metadata:
+  name: spod
+  namespace: openshift-security-profiles
+spec:
+  enableSelinux: true
+  enableJsonEnricher: true
+  jsonEnricherOptions:
+    auditLogIntervalSeconds: 10
+    auditLogPath: "/data/logs/jsonenricher/audit.json"
+    auditLogMaxSize: 50
+    auditLogMaxBackups: 3
+    auditLogMaxAge: 7
+  tolerations:
+  - effect: NoSchedule
+    key: node-role.kubernetes.io/master
+    operator: Exists
+  - effect: NoSchedule
+    key: node-role.kubernetes.io/control-plane
+    operator: Exists
+  - effect: NoExecute
+    key: node.kubernetes.io/not-ready
+    operator: Exists

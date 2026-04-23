@@ -1,0 +1,38 @@
+# Step 4: Run a pod with the SeccompProfile applied
+#
+# The pod references the SeccompProfile via its localhostProfile path.
+# SPO installs the profile as a JSON file on each node's seccomp directory.
+#
+# Usage:
+#   oc apply -f 04-seccomp-pod.yaml
+#
+# Verify the pod is running:
+#   oc get pod demo-seccomp-pod -n spo-demo
+#
+# Confirm seccomp is active:
+#   oc exec demo-seccomp-pod -n spo-demo -- cat /proc/1/status | grep Seccomp
+#   # Seccomp: 2   (means seccomp filter is active)
+#
+# Cleanup when done:
+#   oc delete -f 04-seccomp-pod.yaml
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: demo-seccomp-pod
+  namespace: spo-demo
+spec:
+  securityContext:
+    runAsNonRoot: true
+    runAsUser: 1000
+    seccompProfile:
+      type: Localhost
+      localhostProfile: operator/demo-log-all.json
+  containers:
+  - name: test
+    image: registry.access.redhat.com/ubi9/ubi-minimal:latest
+    command: ["sleep", "infinity"]
+    securityContext:
+      allowPrivilegeEscalation: false
+      capabilities:
+        drop: ["ALL"]

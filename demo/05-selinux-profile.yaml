@@ -1,0 +1,66 @@
+# Step 5: Create a SelinuxProfile
+#
+# Requires: SELinux enabled in SPOD (step 2), SPOD in RUNNING state
+#
+# This profile inherits from the base "container" policy and adds
+# permissions to read/write files in /var/log (var_log_t).
+#
+# In 0.10.0, SELinux profiles are installed via privileged Kubernetes Jobs
+# that reload the SELinux kernel policy on each node.
+#
+# Usage:
+#   # Verify SPOD is RUNNING first:
+#   oc get spod spod -n openshift-security-profiles
+#
+#   oc apply -f 05-selinux-profile.yaml
+#
+# Wait for installation (takes 15-30 seconds for the reload Jobs to run):
+#   watch oc get selinuxprofile -n spo-demo
+#   (wait for STATE=Installed)
+#
+# Observe the SELinux reload Jobs:
+#   oc get jobs -n openshift-security-profiles | grep selinux
+#
+# NOTE: If the profile stays in Error state, it may be due to stale state
+# from a previous SPOD lifecycle. Try deleting ALL selinux-related node
+# statuses and the profile, then recreate:
+#   oc delete securityprofilenodestatus --all -n spo-demo
+#   oc delete selinuxprofile demo-errorlogger -n spo-demo
+#   oc apply -f 05-selinux-profile.yaml
+---
+apiVersion: security-profiles-operator.x-k8s.io/v1alpha2
+kind: SelinuxProfile
+metadata:
+  name: demo-errorlogger
+  namespace: spo-demo
+spec:
+  inherit:
+    - name: container
+  allow:
+    var_log_t:
+      dir:
+        - open
+        - read
+        - getattr
+        - lock
+        - search
+        - ioctl
+        - add_name
+        - remove_name
+        - write
+      file:
+        - getattr
+        - read
+        - write
+        - append
+        - ioctl
+        - lock
+        - map
+        - open
+        - create
+      sock_file:
+        - getattr
+        - read
+        - write
+        - append
+        - open

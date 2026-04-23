@@ -1,0 +1,33 @@
+# Step 8: Deploy a workload to generate audit events for the JSON enricher
+#
+# This pod runs a simple loop that generates syscall activity (ls, date, sleep).
+# The JSON enricher will capture these syscalls and output structured JSON lines.
+#
+# Usage:
+#   oc apply -f 08-json-enricher-workload.yaml
+#
+# Wait for pod to be running:
+#   oc get pod demo-audit-workload -n spo-demo
+#
+# Then proceed to step 9 to view the enricher output.
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: demo-audit-workload
+  namespace: spo-demo
+spec:
+  securityContext:
+    runAsNonRoot: true
+    runAsUser: 1000
+    seccompProfile:
+      type: Localhost
+      localhostProfile: operator/demo-log-all.json
+  containers:
+  - name: busywork
+    image: registry.access.redhat.com/ubi9/ubi-minimal:latest
+    command: ["/bin/sh", "-c", "while true; do ls /tmp; date; sleep 5; done"]
+    securityContext:
+      allowPrivilegeEscalation: false
+      capabilities:
+        drop: ["ALL"]

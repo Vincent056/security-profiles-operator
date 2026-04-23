@@ -1,0 +1,21 @@
+# Step 2: Enable SELinux support in the SPOD CR
+#
+# By default, SELinux support is not enabled. We patch the SPOD to enable it.
+# This causes the SPOD DaemonSet to roll out with the selinuxd sidecar.
+#
+# Usage:
+#   oc patch spod spod -n openshift-security-profiles --type=merge --patch-file=02-spod-enable-selinux.yaml
+#
+# Wait for SPOD to become RUNNING:
+#   watch oc get spod spod -n openshift-security-profiles
+#
+# Verify selinuxd container is present (3 containers per spod pod):
+#   oc get pods -n openshift-security-profiles -l name=spod
+---
+apiVersion: security-profiles-operator.x-k8s.io/v1alpha1
+kind: SecurityProfilesOperatorDaemon
+metadata:
+  name: spod
+  namespace: openshift-security-profiles
+spec:
+  enableSelinux: true
